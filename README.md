@@ -8,10 +8,10 @@
 -  免安装，直接运行EXE即可使用
 
 ## 开发/打包
--1. 安装依赖：`npm install`
--2. 运行开发版：`npm start`
--3. 打包EXE：`npm run build`
+- 1. 安装依赖：`npm install`
+- 2. 运行开发版：`npm start`
+- 3. 打包EXE：`npm run build`
 
 ## 运行环境
 - Windows 10/11（64位）
-- 无需安装Node.js
+- 需安装Node.js
