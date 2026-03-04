@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抽人小精灵</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background: #f5f7fa;
+            min-height: 100vh;
+            color: #333;
+            -webkit-app-region: drag; /* 整个窗口可拖动 */
+        }
+
+        /* 标题栏（拖动区域） */
+        .title-bar {
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            cursor: move;
+        }
+
+        .title-bar h2 {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 10px;
+            -webkit-app-region: no-drag; /* 按钮不可拖动 */
+        }
+
+        .window-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .close-btn {
+            background: #ff5252;
+            color: white;
+        }
+
+        .container {
+            padding: 15px;
+            -webkit-app-region: no-drag; /* 内容区域不可拖动 */
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: 500;
+            color: #2d3748;
+            font-size: 13px;
+        }
+
+        input, select, button {
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        button:hover {
+            background: #5a67d8;
+        }
+
+        button.secondary {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+
+        button.danger {
+            background: #e53e3e;
+        }
+
+        .list-section {
+            margin-bottom: 15px;
+        }
+
+        .list-section h3 {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #4a5568;
+        }
+
+        .list-container {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 10px;
+            min-height: 100px;
+            max-height: 120px;
+            overflow-y: auto;
+            background: white;
+            font-size: 13px;
+        }
+
+        .person-item {
+            padding: 5px;
+            margin: 2px 0;
+            background: #f7fafc;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .person-item button {
+            padding: 2px 6px;
+            font-size: 11px;
+            background: #e53e3e;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #718096;
+            padding: 10px;
+            font-style: italic;
+            font-size: 12px;
+        }
+
+        .result-section {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .result-title {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .result-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .winner-card {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            min-width: 80px;
+            animation: pop 0.5s ease forwards;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-label {
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px dashed #e2e8f0;
+            cursor: pointer;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .history-section {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .history-list {
+            max-height: 80px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+
+        .history-item {
+            padding: 4px;
+            margin: 2px 0;
+            background: #f7fafc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 标题栏（可拖动） -->
+    <div class="title-bar">
+        <h2>抽人小精灵 🎲</h2>
+        <div class="window-controls">
+            <button class="window-btn close-btn" onclick="window.close()">×</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 控制区 -->
+        <div class="controls">
+            <div class="control-group">
+                <label for="drawCount">单次抽取人数</label>
+                <input type="number" id="drawCount" min="1" max="20" value="1">
+            </div>
+            <div class="control-group">
+                <label for="repeatCount">连续抽取次数</label>
+                <input type="number" id="repeatCount" min="1" max="10" value="1">
+            </div>
+            <div class="control-group">
+                <label for="fileInput">导入名单</label>
+                <label for="fileInput" class="file-label" id="fileLabel">
+                    📁 选择TXT文件
+                </label>
+                <input type="file" id="fileInput" accept=".txt">
+            </div>
+        </div>
+
+        <!-- 按钮区 -->
+        <div class="btn-group">
+            <button id="drawBtn">🎲 开始抽取</button>
+            <button id="saveBtn" class="secondary">💾 保存人员库</button>
+            <button id="clearBtn" class="danger">🗑️ 清空</button>
+            <button id="resetResultBtn" class="secondary">🔄 重置</button>
+        </div>
+
+        <!-- 人员库列表 -->
+        <div class="list-section">
+            <h3>当前人员库</h3>
+            <div class="list-container" id="personList">
+                <div class="empty-state">暂无人员，请导入TXT</div>
+            </div>
+        </div>
+
+        <!-- 抽取结果 -->
+        <div class="result-section hidden" id="resultSection">
+            <div class="result-title">🎉 抽取结果</div>
+            <div class="result-container" id="resultContainer"></div>
+        </div>
+
+        <!-- 抽取历史 -->
+        <div class="history-section hidden" id="historySection">
+            <h3>抽取历史</h3>
+            <div class="history-list" id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let personDatabase = [];
+        let drawHistory = [];
+
+        // DOM元素
+        const drawCountInput = document.getElementById('drawCount');
+        const repeatCountInput = document.getElementById('repeatCount');
+        const fileInput = document.getElementById('fileInput');
+        const fileLabel = document.getElementById('fileLabel');
+        const drawBtn = document.getElementById('drawBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const resetResultBtn = document.getElementById('resetResultBtn');
+        const personList = document.getElementById('personList');
+        const resultSection = document.getElementById('resultSection');
+        const resultContainer = document.getElementById('resultContainer');
+        const historySection = document.getElementById('historySection');
+        const historyList = document.getElementById('historyList');
+
+        // 初始化
+        function init() {
+            const savedPersons = localStorage.getItem('personDatabase');
+            if (savedPersons) {
+                personDatabase = JSON.parse(savedPersons);
+                renderPersonList();
+            }
+            
+            const savedHistory = localStorage.getItem('drawHistory');
+            if (savedHistory) {
+                drawHistory = JSON.parse(savedHistory);
+                renderHistory();
+                historySection.classList.remove('hidden');
+            }
+        }
+
+        // 渲染人员列表
+        function renderPersonList() {
+            if (personDatabase.length === 0) {
+                personList.innerHTML = '<div class="empty-state">暂无人员，请导入TXT</div>';
+                return;
+            }
+
+            personList.innerHTML = '';
+            personDatabase.forEach((person, index) => {
+                const item = document.createElement('div');
+                item.className = 'person-item';
+                item.innerHTML = `
+                    <span>${person}</span>
+                    <button class="delete-person" data-index="${index}">删</button>
+                `;
+                personList.appendChild(item);
+            });
+
+            // 绑定删除事件
+            document.querySelectorAll('.delete-person').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    personDatabase.splice(index, 1);
+                    savePersonDatabase();
+                    renderPersonList();
+                });
+            });
+        }
+
+        // 导入TXT文件
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                const newPersons = content.split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0);
+                
+                if (newPersons.length > 0) {
+                    const uniquePersons = [...new Set([...personDatabase, ...newPersons])];
+                    personDatabase = uniquePersons;
+                    savePersonDatabase();
+                    renderPersonList();
+                    alert(`导入成功！共${newPersons.length}人，总人数：${personDatabase.length}`);
+                    fileLabel.textContent = `📁 已导入: ${file.name}`;
+                } else {
+                    alert('文件内容为空！');
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // 保存人员库
+        function savePersonDatabase() {
+            localStorage.setItem('personDatabase', JSON.stringify(personDatabase));
+        }
+
+        // 抽取人员
+        function drawPersons() {
+            if (personDatabase.length === 0) {
+                alert('人员库为空，请先导入！');
+                return;
+            }
+
+            const drawCount = parseInt(drawCountInput.value) || 1;
+            const repeatCount = parseInt(repeatCountInput.value) || 1;
+
+            if (drawCount > personDatabase.length) {
+                alert(`抽取人数不能超过总人数（${personDatabase.length}人）`);
+                return;
+            }
+
+            resultSection.classList.remove('hidden');
+            historySection.classList.remove('hidden');
+            resultContainer.innerHTML = '';
+            
+            let allWinners = [];
+            
+            // 连续抽取
+            for (let i = 0; i < repeatCount; i++) {
+                const tempArray = [...personDatabase];
+                const winners = [];
+
+                for (let j = 0; j < drawCount; j++) {
+                    const randomIndex = Math.floor(Math.random() * tempArray.length);
+                    const winner = tempArray.splice(randomIndex, 1)[0];
+                    winners.push(winner);
+                }
+
+                allWinners.push(...winners);
+                
+                // 创建结果卡片
+                winners.forEach(winner => {
+                    const card = document.createElement('div');
+                    card.className = 'winner-card';
+                    card.textContent = winner;
+                    card.style.animationDelay = `${i * 0.2 + winners.indexOf(winner) * 0.1}s`;
+                    resultContainer.appendChild(card);
+                });
+            }
+
+            // 记录历史
+            const historyItem = {
+                time: new Date().toLocaleString(),
+                count: drawCount,
+                repeat: repeatCount,
+                winners: allWinners
+            };
+            
+            drawHistory.unshift(historyItem);
+            if (drawHistory.length > 20) drawHistory.pop();
+            
+            localStorage.setItem('drawHistory', JSON.stringify(drawHistory));
+            renderHistory();
+        }
+
+        // 渲染历史
+        function renderHistory() {
+            historyList.innerHTML = '';
+            drawHistory.forEach((item, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `
+                    <strong>${index + 1}.</strong> ${item.time} - 抽取${item.repeat}轮，每轮${item.count}人: 
+                    ${item.winners.join('、')}
+                `;
+                historyList.appendChild(historyItem);
+            });
+        }
+
+        // 清空人员库
+        function clearPersonDatabase() {
+            if (confirm('确定清空人员库？')) {
+                personDatabase = [];
+                localStorage.removeItem('personDatabase');
+                renderPersonList();
+                fileLabel.textContent = '📁 选择TXT文件';
+            }
+        }
+
+        // 重置结果
+        function resetResult() {
+            resultContainer.innerHTML = '';
+            resultSection.classList.add('hidden');
+        }
+
+        // 绑定事件
+        drawBtn.addEventListener('click', drawPersons);
+        saveBtn.addEventListener('click', () => {
+            savePersonDatabase();
+            alert('人员库已保存！');
+        });
+        clearBtn.addEventListener('click', clearPersonDatabase);
+        resetResultBtn.addEventListener('click', resetResult);
+
+        // 初始化
+        init();
+    </script>
+</body>
+</html>
